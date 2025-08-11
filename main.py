@@ -12,13 +12,11 @@ from langchain_openai import ChatOpenAI
 from langchain_experimental.tools import PythonREPLTool
 
 # Import our custom tools
-from tools.rag_tool import search_bible
 from tools.qr_tool import generate_qr_code, python_repl_tool
 from tools.search_tool import search_web
 from tools.slack_tool import send_slack_message
-from tools.gematria_tool import calculate_gematria
 from tools.jewish_calendar_mcp import get_jewish_calendar_tools_sync
-from tools.date_tool import get_today_date
+from tools.shababot_tool import shababot
 
 # Load environment variables
 load_dotenv()
@@ -27,38 +25,36 @@ load_dotenv()
 def create_agent():
     """Create the main agent with all tools"""
     
-    # Define the system prompt based on the diagram workflow
-    system_prompt = """You are a comprehensive agent that can handle multiple types of tasks:
+    # Define the system prompt for the main orchestrator agent
+    system_prompt = """You are the Main Agent orchestrator. Use tools to accomplish tasks accurately and concisely.
 
-1. **RAG Search**: Answer questions about biblical figures and religious topics using the search_bible tool
-2. **QR Code Generation**: Create QR codes for URLs, text, or other data
-3. **Web Search**: Search the web for current information and general knowledge
-4. **Code Execution**: Execute Python code for complex tasks
-5. **Slack Integration**: Send messages to Slack channels
-6. **Gematria**: Calculate numerical values of Hebrew text using traditional Jewish Gematria
-7. **Jewish Calendar**: Convert dates between Hebrew and Gregorian calendars, get Jewish holidays, and more
+Capabilities:
+1. **Jewish Utilities (ShabaBot)**: Use the `shababot` tool for all Jewish utilities:
+   - Today's Gregorian date
+   - Gematria calculations
+   - Bible search (RAG)
+   - Jewish Calendar via MCP (Hebrew/Gregorian conversions, holidays, Daf Yomi, parasha)
+   Always route these requests through `shababot`. Do not call MCP tools directly.
+2. **QR Code Generation**: Create QR codes for URLs or text using `generate_qr_code`.
+3. **Web Search**: Search for current information using `search_web`.
+4. **Slack Integration**: Send messages to Slack channels using `send_slack_message`.
 
-You should:
-- Use the appropriate tool for each task
-- Combine tools when needed (e.g., search for info, then create QR code)
-- Provide clear, helpful responses
-- When asked about biblical topics, use the RAG search tool
-- When asked to create QR codes, use the QR generation tools
-- When asked for current information, use the web search tools
-- When asked to send a message to Slack, use the send_slack_message tool
-- When asked about Gematria or Hebrew numerical values, use the calculate_gematria tool
-- When asked about Jewish dates, holidays, or calendar conversions, use the Jewish Calendar tools
+Guidelines:
+- Select the appropriate tool for each request and keep responses focused.
+- Combine tools when helpful (e.g., search, then produce a QR code).
+- For any date, Gematria, Bible, or Jewish calendar task, always use `shababot`.
+- If a tool returns multiple items, summarize the most relevant results first.
 
 Examples:
-- "Who's Avraham's second wife?" → Use search_bible
-- "Create a QR code for Wikipedia" → Use generate_qr_code
-- "Search for LangChain information" → Use search_web
-- "Send a message to Slack" → Use send_slack_message
-- "Calculate Gematria for שלום" → Use calculate_gematria
-- "What's the Gematria value of אהבה" → Use calculate_gematria with detailed=False
-- "What's today's Hebrew date?" → Use Jewish Calendar tools
-- "When is Passover this year?" → Use Jewish Calendar tools
-- "Convert January 15, 2024 to Hebrew date" → Use Jewish Calendar tools
+- "Who's Avraham's second wife?" → Use `shababot`
+- "What's today's date?" → Use `shababot`
+- "Calculate Gematria for שלום" → Use `shababot`
+- "Create a QR code for Wikipedia" → Use `generate_qr_code`
+- "Search for LangChain information" → Use `search_web`
+- "Send a message to Slack" → Use `send_slack_message`
+- "What's today's Hebrew date?" → Use `shababot`
+- "When is Passover this year?" → Use `shababot`
+- "Convert January 15, 2024 to Hebrew date" → Use `shababot`
 """
 
     # Create the prompt template
@@ -70,9 +66,9 @@ Examples:
 
     # Define all available tools
     tools = [
-        # RAG and Bible search
-        search_bible,
-        
+        # Sub-agent tool (Jewish utilities)
+        shababot,
+
         # QR code tools
         generate_qr_code,
         
@@ -81,27 +77,9 @@ Examples:
         
         # Slack tools
         send_slack_message,
-        
-        # Gematria tools
-        calculate_gematria,
-
-        # Utility tools
-        get_today_date,
     ]
     
-    # Add Jewish Calendar MCP tools if available
-    try:
-        jewish_calendar_tools = get_jewish_calendar_tools_sync()
-        if jewish_calendar_tools:
-            tools.extend(jewish_calendar_tools)
-            print(f"✅ Added {len(jewish_calendar_tools)} Jewish Calendar MCP tools")
-        else:
-            print("⚠️  Jewish Calendar MCP tools not available")
-            print("To install: npm install -g @hebcal/mcp-server")
-    except Exception as e:
-        print(f"⚠️  Could not load Jewish Calendar MCP tools: {e}")
-        print("To install: npm install -g @hebcal/mcp-server")
-        print("Agent will continue without Jewish Calendar functionality")
+    # Jewish Calendar MCP tools are now managed within ShabaBot
 
     # Create the LLM (handle missing API key gracefully)
     try:
