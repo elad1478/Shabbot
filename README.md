@@ -1,3 +1,195 @@
+# Shabbot – LangChain Demo Agent
+
+Shabbot is a LangChain-based agent with a focused set of Jewish utilities and a simple web UI. It demonstrates sub-agents, hosted MCP integration, RAG/Bible search, QR code generation, and web search.
+
+## 🎯 Features
+
+1. **Shabbot sub‑agent** (single tool `shabbot`)
+   - Today’s Gregorian date
+   - Gematria calculations
+   - Bible search (RAG)
+   - Jewish Calendar via hosted MCP (Hebrew/Gregorian conversions, holidays, Daf Yomi, parasha)
+2. **QR Code generation** – Create QR codes for URLs or text
+3. **Web search** – Tavily-powered search (requires `TAVILY_API_KEY`)
+4. **Slack messaging** – Send text messages to Slack channels (optional)
+5. **Web app** – Clean Flask UI with logo, loader, and QR image rendering
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.10+
+- pipenv (for dependency management)
+
+### Installation
+
+1) Navigate to the project directory:
+
+```bash
+cd langchain-demo-agent
+```
+
+2) Install dependencies:
+
+```bash
+pipenv install
+```
+
+3) Set up environment variables (copy `env.example` to `.env` and edit values):
+
+```bash
+cp env.example .env
+```
+
+### Environment Variables
+
+```env
+# Required for LLM reasoning
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional – for web search
+TAVILY_API_KEY=your_tavily_api_key_here
+
+# Optional – for advanced RAG with Pinecone (if configured)
+PINECONE_API_KEY=your_pinecone_api_key_here
+PINECONE_INDEX_NAME=your_pinecone_index_name_here
+
+# Optional – Slack messaging
+SLACK_BOT_TOKEN=your_slack_bot_token
+SLACK_CHANNEL_ID=your_channel_id
+```
+
+## 🎮 Usage
+
+### Run the CLI agent
+
+```bash
+pipenv run python langchain-demo-agent/main.py
+```
+
+### Run the Web App (recommended)
+
+```bash
+pipenv run python langchain-demo-agent/web_app.py
+```
+
+Then open `http://localhost:5001`. The page shows a large logo, an input box, and renders text or QR image responses. A loader is shown while waiting for results.
+
+## 📝 Usage Examples
+
+### Shabbot (sub-agent via `shabbot` tool)
+- "Who was Avraham’s second wife?"
+- "Calculate Gematria for שלום"
+- "What’s today’s date?"
+- "What’s today’s Hebrew date?"
+- "When is Passover this year?"
+- "Convert 2025-09-22 to Hebrew date"
+
+### QR Code Generation
+- "Create a QR code for https://www.wikipedia.org"
+
+### Web Search
+- "Search for information about LangChain"
+
+### Slack Integration
+- "Send a test message to Slack"
+
+## 🏗️ Project Structure
+
+```
+langchain-demo-agent/
+├── main.py                 # Main agent implementation (CLI)
+├── web_app.py              # Flask web app (UI)
+├── Pipfile                 # Dependencies
+├── env.example             # Environment variables template
+├── README.md               # This file
+├── templates/
+│   └── index.html          # Web UI template (logo, loader, outputs)
+├── static/
+│   └── ShabotLogo.png      # Logo (place your file here)
+├── tools/                  # Custom tools
+│   ├── __init__.py
+│   ├── rag_tool.py         # RAG/Biblical search tool
+│   ├── qr_tool.py          # QR code generation tool
+│   ├── search_tool.py      # Web search tool (Tavily)
+│   ├── slack_tool.py       # Slack integration (messages only)
+│   ├── gematria_tool.py    # Gematria calculation tool
+│   ├── date_tool.py        # Today’s date tool
+│   ├── shababot_tool.py    # Exposes Shabbot sub-agent as a tool
+│   └── jewish_calendar_mcp.py # Hosted MCP client (Hebcal) used by Shabbot
+├── agents/
+│   └── shababot.py         # Shabbot sub-agent (date, gematria, bible, MCP calendar)
+└── outputs/                # Generated outputs
+    └── qr_codes/           # Generated QR codes
+```
+
+## 🔧 Tools Overview
+
+### RAG Tool (`search_bible`)
+- Searches biblical knowledge for answers via Pinecone + OpenAI
+
+### QR Code Tool
+- `generate_qr_code`: Creates single QR codes and saves to `outputs/qr_codes/`
+
+### Search Tool
+- `search_web`: Tavily-based web search (requires `TAVILY_API_KEY`)
+
+### Slack Tool
+- `send_slack_message`: Send text messages to Slack (requires `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`)
+
+### Gematria Tool
+- `calculate_gematria(detailed=True|False)`: Detailed breakdown or simple value
+
+### Date Tool
+- `get_today_date`: Returns today’s date (YYYY-MM-DD)
+
+### Shabbot Tool (`shabbot`)
+- Routes: today’s date, gematria, Bible RAG, Jewish calendar (via hosted MCP)
+- Internally loads Hebcal MCP tools using `MultiServerMCPClient` (no local server to run)
+
+## 🎨 Agent Workflow (high level)
+
+1. User asks a question
+2. Main agent selects the appropriate tool (often `shabbot`)
+3. Sub-agent or tool executes and returns structured results
+4. Web app displays text and/or QR images
+
+## 🔍 Troubleshooting
+
+1. **"OpenAI API key not found"**
+   - Set `OPENAI_API_KEY` in `.env`
+
+2. **"Tavily API key not found"**
+   - Set `TAVILY_API_KEY` for web search functionality
+
+3. **MCP calendar tools not available**
+   - Shabbot prints a warning; other features continue to work
+   - Hosted MCP is used (`https://www.hebcal.com/mcp`); ensure internet access
+
+4. **QR code generation fails**
+   - Ensure the `outputs/qr_codes/` directory exists and is writable
+
+5. **Slack messaging fails**
+   - Ensure `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` are set correctly
+   - Check that the bot has `chat:write` scope and is invited to the channel
+
+## 🚀 Future Enhancements
+
+- [x] Hosted MCP (Hebcal) integration via `MultiServerMCPClient`
+- [x] Web interface with loader and QR rendering
+- [ ] Enhanced RAG with more document sources
+- [ ] Voice input/output capabilities
+- [ ] More language support
+- [ ] Advanced QR code customization
+- [ ] Slack bot interactive features
+- [ ] Scheduled message sending
+
+## 📄 License
+
+This project is for educational purposes and demonstrates LangChain tool-calling agents.
+
+## 🤝 Contributing
+
+Feel free to submit issues and enhancement requests!
 # LangChain Demo Agent
 
 This project implements a comprehensive LangChain agent that demonstrates multiple capabilities as shown in the whiteboard diagram. The agent can handle various tasks including RAG search, translation, QR code generation, web search, and code execution.
