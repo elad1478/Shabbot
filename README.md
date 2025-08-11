@@ -74,6 +74,18 @@ pipenv run python langchain-demo-agent/web_app.py
 
 Then open `http://localhost:5001`. The page shows a large logo, an input box, and renders text or QR image responses. A loader is shown while waiting for results.
 
+### Ingest documents for RAG (Pinecone)
+
+Use the ingestion script to load your own `.txt` files into the Pinecone index used by Bible/RAG queries.
+
+```bash
+pipenv run python langchain-demo-agent/ingestion.py --path ./data_or_file --chunk_size 1000 --chunk_overlap 150
+```
+
+Requirements:
+- `OPENAI_API_KEY` and `PINECONE_INDEX_NAME` set in `.env`
+- Files must be `.txt` (use any directory; subfolders are supported)
+
 ## 📝 Usage Examples
 
 ### Shabbot (sub-agent via `shabbot` tool)
