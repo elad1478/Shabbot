@@ -16,7 +16,7 @@ from tools.qr_tool import generate_qr_code, python_repl_tool
 from tools.search_tool import search_web
 from tools.slack_tool import send_slack_message
 from tools.jewish_calendar_mcp import get_jewish_calendar_tools_sync
-from tools.shababot_tool import shababot
+from tools.shababot_tool import shabbot
 
 # Load environment variables
 load_dotenv()
@@ -29,7 +29,7 @@ def create_agent():
     system_prompt = """You are the Main Agent orchestrator. Use tools to accomplish tasks accurately and concisely.
 
 Capabilities:
-1. **Jewish Utilities (ShabaBot)**: Use the `shababot` tool for all Jewish utilities:
+1. **Jewish Utilities (Shabbot)**: Use the `shabbot` tool for all Jewish utilities:
    - Today's Gregorian date
    - Gematria calculations
    - Bible search (RAG)
@@ -46,15 +46,15 @@ Guidelines:
 - If a tool returns multiple items, summarize the most relevant results first.
 
 Examples:
-- "Who's Avraham's second wife?" → Use `shababot`
-- "What's today's date?" → Use `shababot`
-- "Calculate Gematria for שלום" → Use `shababot`
+- "Who's Avraham's second wife?" → Use `shabbot`
+- "What's today's date?" → Use `shabbot`
+- "Calculate Gematria for שלום" → Use `shabbot`
 - "Create a QR code for Wikipedia" → Use `generate_qr_code`
 - "Search for LangChain information" → Use `search_web`
 - "Send a message to Slack" → Use `send_slack_message`
-- "What's today's Hebrew date?" → Use `shababot`
-- "When is Passover this year?" → Use `shababot`
-- "Convert January 15, 2024 to Hebrew date" → Use `shababot`
+- "What's today's Hebrew date?" → Use `shabbot`
+- "When is Passover this year?" → Use `shabbot`
+- "Convert January 15, 2024 to Hebrew date" → Use `shabbot`
 """
 
     # Create the prompt template
@@ -67,7 +67,7 @@ Examples:
     # Define all available tools
     tools = [
         # Sub-agent tool (Jewish utilities)
-        shababot,
+        shabbot,
 
         # QR code tools
         generate_qr_code,

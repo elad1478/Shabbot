@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shabbot</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #f7f7fb 0%, #eef3ff 50%, #e8f7f1 100%);
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --border: rgba(0, 0, 0, 0.08);
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #2563eb;
+      --primary-600: #1d4ed8;
+      --shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: var(--text); background: var(--bg-gradient); }
+    .container { max-width: 840px; margin: 0 auto; padding: 48px 24px 64px; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px; }
+    .logo { width: 420px; height: 420px; border-radius: 18px; object-fit: contain; box-shadow: var(--shadow); background: #fff; padding: 18px; border: 1px solid var(--border); }
+    @media (max-width: 520px) {
+      .logo { width: 80vw; height: auto; }
+    }
+    h1 { display: none; }
+    .subtitle { display: none; }
+
+    .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+    form { display: flex; gap: 10px; align-items: stretch; }
+    input[type="text"] { flex: 1; min-width: 240px; border-radius: 12px; border: 1px solid var(--border); padding: 14px 16px; font-size: 1rem; outline: none; background: #fff; box-shadow: inset 0 1px 0 rgba(0,0,0,0.02); }
+    input[type="text"]:focus { border-color: rgba(37, 99, 235, 0.35); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+    button { background: var(--primary); color: #fff; border: none; padding: 0 18px; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: background 0.15s ease; }
+    button:hover { background: var(--primary-600); }
+
+    .section { margin-top: 18px; }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+    .error { color: #b00020; margin: 0 0 10px; font-weight: 600; }
+    .label { color: var(--muted); font-size: 0.92rem; margin-bottom: 8px; }
+    .output { white-space: pre-wrap; line-height: 1.5; font-size: 1.02rem; }
+    .qr { margin-top: 14px; display: flex; align-items: center; gap: 14px; }
+    .qr img { max-width: 320px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); background: #fff; }
+
+    .footer { margin-top: 42px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+
+    /* Loader overlay */
+    .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.7); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+    .loader-overlay.show { display: flex; }
+    .spinner { width: 64px; height: 64px; border: 6px solid rgba(37,99,235,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; box-shadow: var(--shadow); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link rel="icon" href="/static/ShabotLogo.png" />
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <div id="loader" class="loader-overlay"><div class="spinner" aria-label="Loading"></div></div>
+  <div class="container">
+    <div class="header">
+      <img class="logo" src="/static/ShabotLogo.png" alt="Shabbot Logo" />
+    </div>
+
+    <div class="panel">
+      <form method="POST" action="/" id="ask-form">
+        <input type="text" name="query" placeholder="Ask Shabbot..." value="{{ query or '' }}" />
+        <button type="submit">Ask</button>
+      </form>
+    </div>
+
+    {% if error %}
+      <div class="section">
+        <div class="card">
+          <div class="error">{{ error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if output or image_path %}
+      <div class="section">
+        <div class="card">
+          {% if output %}
+            <div class="label">Response</div>
+            <div class="output">{{ output }}</div>
+          {% endif %}
+          {% if image_path %}
+            <div class="qr">
+              <div class="label">QR Code</div>
+              <img src="/{{ image_path }}" alt="QR Code" />
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="footer">ShabaBot • Powered by LangChain + MCP</div>
+  </div>
+  <script>
+    (function() {
+      const form = document.getElementById('ask-form');
+      const loader = document.getElementById('loader');
+      if (form && loader) {
+        form.addEventListener('submit', function() {
+          loader.classList.add('show');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
