@@ -308,4 +308,143 @@ Add a new top-level tool:
 - Tavily search: https://python.langchain.com/docs/integrations/tools/tavily
 - Pinecone vectors: https://docs.pinecone.io/
 
+---
+
+## 13) Detailed Code Walkthroughs
+
+### A) Gematria Tool (detailed vs. simple)
+
+```python
+# tools/gematria_tool.py (core function)
+from langchain_core.tools import tool
+
+@tool
+def calculate_gematria(hebrew_text: str, detailed: bool = True) -> str:
+    """
+    Calculate the Gematria (numerical value) of Hebrew text.
+    When detailed=False, return only the total value.
+    """
+    result = gematria_calculator.calculate_gematria(hebrew_text)
+    if "error" in result:
+        return f"Error: {result['error']}"
+    if detailed:
+        return gematria_calculator.format_result(result)
+    else:
+        return f"The Gematria value of '{hebrew_text}' is {result['value']}"
+```
+
+Notes:
+- Use `detailed=False` when you only need the number (useful for programmatic pipelines).
+- Validation and normalization happen in `GematriaCalculator.calculate_gematria`.
+
+### B) RAG Tool (Retriever configuration)
+
+```python
+# tools/rag_tool.py (retriever k increased)
+retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+combine_docs_chain = create_stuff_documents_chain(self.llm, retrieval_qa_chat_prompt)
+
+retriever = self.vectorstore.as_retriever(
+    search_kwargs={"k": 10}  # fetch more chunks than the default
+)
+self.retrieval_chain = create_retrieval_chain(
+    retriever=retriever,
+    combine_docs_chain=combine_docs_chain,
+)
+```
+
+Notes:
+- Raising `k` increases context at the cost of extra tokens; tune based on your corpus.
+- The prompt from the LangChain Hub structures how retrieved docs are stuffed into the LLM.
+
+### C) Hosted MCP (Hebcal) client
+
+```python
+# tools/jewish_calendar_mcp.py (hosted client)
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+async def get_jewish_calendar_tools():
+    client = MultiServerMCPClient({
+        "hebcal": {
+            "transport": "streamable_http",
+            "url": "https://www.hebcal.com/mcp",
+        }
+    })
+    return await client.get_tools()  # converts MCP tools -> LangChain tools
+```
+
+Usage inside Shabbot:
+```python
+# agents/shababot.py (adding MCP tools if available)
+shabbot_tools = [get_today_date, calculate_gematria, search_bible]
+try:
+    jc_tools = get_jewish_calendar_tools_sync() or []
+    shabbot_tools.extend(jc_tools)
+except Exception:
+    pass  # continue without MCP
+```
+
+### D) Main Orchestrator Agent
+
+```python
+# main.py (tool registry and async call)
+tools = [
+    shabbot,            # sub-agent encapsulating Jewish utilities
+    generate_qr_code,   # QR code creation
+    search_web,         # Tavily search
+    send_slack_message, # Slack messaging
+]
+
+llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+
+# Always use ainvoke because some tools are async-only (MCP)
+result = await executor.ainvoke({"input": "What's today's Hebrew date?"})
+print(result["output"])  # final answer
+```
+
+### E) Web App (loader + QR rendering)
+
+```python
+# web_app.py (core handler, simplified)
+result = asyncio.run(agent.ainvoke({"input": query}))
+output = result.get('output', '')
+image_path = None
+if isinstance(output, str):
+    m = re.search(r"(outputs/qr_codes/[^\s]+\.png)", output)
+    if m:
+        image_path = m.group(1)
+return render_template('index.html', output=output, image_path=image_path)
+```
+
+Loader overlay wiring (in `templates/index.html`):
+```html
+<div id="loader" class="loader-overlay"><div class="spinner" aria-label="Loading"></div></div>
+<form id="ask-form" method="POST" action="/">
+  <input name="query" ... />
+  <button type="submit">Ask</button>
+  <script>
+    document.getElementById('ask-form').addEventListener('submit', () =>
+      document.getElementById('loader').classList.add('show'))
+  ;</script>
+</form>
+```
+
+### F) Ingestion Script (Documents -> Pinecone)
+
+```bash
+pipenv run python langchain-demo-agent/ingestion.py --path ./your_texts --chunk_size 1000 --chunk_overlap 150
+```
+
+Important parameters:
+- `--path`: file or directory; only `.txt` files are loaded (recursively for directories)
+- `--chunk_size` and `--chunk_overlap`: balance between context continuity and token cost
+
+Environment:
+- Requires `OPENAI_API_KEY` and `PINECONE_INDEX_NAME` in `.env`
+- Uses `text-embedding-3-small` by default
+
+---
+
 Happy hacking with Shabbot! 🚀
