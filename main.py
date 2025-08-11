@@ -9,10 +9,9 @@ from langchain import hub
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_openai import ChatOpenAI
-from langchain_experimental.tools import PythonREPLTool
 
 # Import our custom tools
-from tools.qr_tool import generate_qr_code, python_repl_tool
+from tools.qr_tool import generate_qr_code
 from tools.search_tool import search_web
 from tools.slack_tool import send_slack_message
 from tools.jewish_calendar_mcp import get_jewish_calendar_tools_sync

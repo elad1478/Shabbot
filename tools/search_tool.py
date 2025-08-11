@@ -27,7 +27,6 @@ def search_web(query: str, max_results: int = 5) -> str:
 
     try:
         tavily = TavilySearch(max_results=max_results)
-        raw = tavily.invoke(query)
-        return json.dumps(raw, ensure_ascii=False)
+        return tavily.invoke(query)
     except Exception as e:
         return f"Search error: {e}"
